@@ -1,0 +1,174 @@
+﻿@page "/"
+@using kvolikblazor.Model
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+<PageTitle>Counter</PageTitle>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            @if (isRegistering)
+            {
+                <h4 class="text-center">Авторизация</h4>
+                <EditForm Model="loginUser" OnValidSubmit="HandleLogin">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="mb-3">
+                        <InputText @bind-Value="loginUser.Email" placeholder="Email" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <InputText @bind-Value="loginUser.Password" type="password" placeholder="Пароль" class="form-control" />
+                    </div>
+                    <div class="form-check mb-3">
+                        <InputCheckbox @bind-Value="rememberMe" class="form-check-input" />
+                        <label class="form-check-label">Запомнить меня</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Войти</button>
+                </EditForm>
+
+                <div class="text-center mt-3">
+                    <NavLink @onclick="ToggleForm" class="btn btn-link">Еще не зарегистрированы? Регистрация</NavLink>
+                </div>
+            }
+            else
+            {
+                <h4 class="text-center">Регистрация</h4>
+                <EditForm Model="newUser" OnValidSubmit="HandleRegister">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="mb-3">
+                        <InputText @bind-Value="newUser.Name" placeholder="Имя" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <InputText @bind-Value="newUser.Email" placeholder="Email" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <InputText @bind-Value="newUser.Discription" placeholder="Описание" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <InputText @bind-Value="newUser.Password" type="password" placeholder="Пароль" class="form-control" />
+                    </div>
+                    <div class="form-check mb-3">
+                        <InputCheckbox @bind-Value="isAdmin" class="form-check-input" />
+                        <label class="form-check-label">Администратор</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Зарегистрироваться</button>
+                </EditForm>
+
+                <div class="text-center mt-3">
+                    <NavLink @onclick="ToggleForm" class="btn btn-link">Уже зарегистрированы? Войти</NavLink>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private Users newUser = new Users();
+    private bool isRegistering = true;
+    private Users loginUser = new Users();
+    private bool rememberMe;
+    private bool isAdmin;
+
+    private void ToggleForm() => isRegistering = !isRegistering;
+
+    private async Task HandleRegister()
+    {
+        try
+        {
+            newUser.Role = isAdmin ? "Администратор" : "Пользователь";
+
+            var response = await Http.PostAsJsonAsync("https://localhost:7294/api/User", newUser);
+            if (response.IsSuccessStatusCode)
+            {
+                isRegistering = true;
+                newUser = new Users();
+                isAdmin = false;
+                ShowAlert("Регистрация прошла успешно!");
+            }
+            else
+            {
+                isRegistering = false;
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                ShowAlert($"Ошибка регистрации: {errorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            isRegistering = false;
+            ShowAlert($"Ошибка: {ex.Message}");
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(loginUser.Email) || string.IsNullOrEmpty(loginUser.Password))
+            {
+                ShowAlert("Пожалуйста, введите имя пользователя и пароль.");
+                return;
+            }
+
+            var loginRequest = new LoginRequest
+                {
+                    Email = loginUser.Email,
+                    Password = loginUser.Password
+                };
+
+            var response = await Http.PostAsJsonAsync("https://localhost:7294/api/User/authentication", loginRequest);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var user = await response.Content.ReadFromJsonAsync<Users>();
+                if (user != null)
+                {
+                    int userId = user.id_User;
+                    await JS.InvokeVoidAsync("localStorage.setItem", "currentUserId", userId);
+
+                    string userRole = user.Role;
+
+                    ShowAlert("Авторизация успешна!");
+
+                    switch (userRole)
+                    {
+                        case "Администратор":
+                            NavigationManager.NavigateTo("/adminEdit");
+                            break;
+                        case "Пользователь":
+                            NavigationManager.NavigateTo("/userProfile");
+                            break;
+                        default:
+                            NavigationManager.NavigateTo("/userProfile");
+                            break;
+                    }
+
+                    loginUser = new Users();
+                }
+                else
+                {
+                    ShowAlert("Ошибка: не удалось получить данные пользователя.");
+                }
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                ShowAlert($"Ошибка авторизации: {errorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowAlert($"Ошибка: {ex.Message}");
+        }
+    }
+
+    private void ShowAlert(string message)
+    {
+        JS.InvokeVoidAsync("alert", message);
+    }
+}

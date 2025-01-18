@@ -1,0 +1,163 @@
+﻿@page "/adminEdit"
+@using kvolikblazor.Model
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+<h3>Управление пользователями</h3>
+<h4>Список пользователей</h4>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Имя</th>
+            <th>Email</th>
+            <th>Пароль</th>
+            <th>Описание</th>
+            <th>Роль</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in users)
+        {
+            <tr>
+                <td>@user.Name</td>
+                <td>@user.Email</td>
+                <td>@user.Password</td>
+                <td>@user.Discription</td>
+                <td>@user.Role</td>
+                <td>
+                    <button @onclick="() => EditUser(user)" class="btn btn-warning">Редактировать</button>
+                    <button @onclick="() => DeleteUser(user.id_User)" class="btn btn-danger">Удалить</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h4>@(isEditing ? "Редактировать пользователя" : "Добавить нового пользователя")</h4>
+<EditForm Model="newUser" OnValidSubmit="isEditing ? HandleUpdateUser : HandleCreateUser">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <InputText @bind-Value="newUser.Name" placeholder="Имя" class="form-control" />
+    <InputText @bind-Value="newUser.Email" placeholder="Email" class="form-control" />
+    <InputText @bind-Value="newUser.Discription" placeholder="Описание" class="form-control" />
+    <InputText @bind-Value="newUser.Password" type="password" placeholder="Пароль" class="form-control" />
+    <button type="submit" class="btn btn-primary">@((isEditing) ? "Сохранить" : "Добавить пользователя")</button>
+    @if (isEditing)
+    {
+        <button type="button" class="btn btn-secondary" @onclick="ResetForm">Отмена</button>
+    }
+</EditForm>
+
+@code {
+    private bool isEditing = false;
+    private bool isRegistering = true;
+    private Users newUser = new Users();
+    private List<Users> users = new List<Users>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        try
+        {
+            var response = await Http.GetAsync("https://localhost:7294/api/User");
+            if (response.IsSuccessStatusCode)
+            {
+                users = await response.Content.ReadFromJsonAsync<List<Users>>();
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowAlert($"Ошибка загрузки пользователей: {ex.Message}");
+        }
+    }
+
+    private async Task HandleUpdateUser()
+    {
+        try
+        {        
+        var userId = newUser.id_User;
+
+        var response = await Http.PutAsJsonAsync($"https://localhost:7294/api/User/{userId}", newUser);
+        if (response.IsSuccessStatusCode)
+            {
+                await LoadUsers();
+                ResetForm();
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                ShowAlert($"Ошибка обновления пользователя: {errorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowAlert($"Ошибка: {ex.Message}");
+        }
+    }
+
+    private async Task HandleCreateUser()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/User", newUser);
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadUsers();
+                ResetForm();
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                ShowAlert($"Ошибка добавления пользователя: {errorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowAlert($"Ошибка: {ex.Message}");
+        }
+    }
+
+    private void EditUser(Users user)
+    {
+        newUser = user;
+        isEditing = true;
+    }
+
+    private async Task DeleteUser(int id)
+    {
+        try
+        {
+            var response = await Http.DeleteAsync($"api/User/{id}");
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadUsers();
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                ShowAlert($"Ошибка удаления пользователя: {errorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowAlert($"Ошибка: {ex.Message}");
+        }
+    }
+
+    private void ResetForm()
+    {
+        newUser = new Users();
+        isEditing = false;
+    }
+
+    private void ShowAlert(string message)
+    {
+        JS.InvokeVoidAsync("alert", message);
+    }
+}

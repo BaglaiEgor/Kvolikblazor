@@ -1,0 +1,89 @@
+﻿@page "/userProfile"
+@using kvolikblazor.Model
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+
+<PageTitle>Профиль пользователя</PageTitle>
+
+<div class="container mt-5">
+    <h3>Привет, @users?.Name!</h3>
+    @if (users != null)
+    {
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Личная информация</h5>
+                <p><strong>Email:</strong> @users.Email</p>
+                <p><strong>Описание:</strong> @users.Discription</p>
+            </div>
+        </div>
+    }
+    else if (isLoading)
+    {
+        <p>Загрузка информации о пользователе...</p>
+    }
+</div>
+
+@code {
+    private Users users;
+    private bool isLoading = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Console.WriteLine("Попытка получения currentUserId из localStorage...");
+            string userIdString = await JS.InvokeAsync<string>("localStorage.getItem", "currentUserId");
+            Console.WriteLine($"Полученное значение: {userIdString}");
+
+            if (string.IsNullOrEmpty(userIdString))
+            {
+                NavigationManager.NavigateTo("/");
+                return;
+            }
+
+            if (int.TryParse(userIdString, out int id))
+            {
+                users = await GetUserById(id);
+                if (users == null)
+                {
+                    NavigationManager.NavigateTo("/");
+                }
+            }
+            else
+            {
+                NavigationManager.NavigateTo("/");
+            }
+
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<Users> GetUserById(int id)
+    {
+        try
+        {
+            var response = await Http.GetAsync($"api/User/{id}");
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<Users>();
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                ShowAlert($"Ошибка получения пользователя: {errorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowAlert($"Ошибка: {ex.Message}");
+        }
+        return null;
+    }
+
+    private void ShowAlert(string message)
+    {
+        JS.InvokeVoidAsync("alert", message);
+    }
+}
