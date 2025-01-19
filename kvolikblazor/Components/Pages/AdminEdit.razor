@@ -5,16 +5,17 @@
 @inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 
-<h3>Управление пользователями</h3>
-<h4>Список пользователей</h4>
-<table class="table">
-    <thead>
+<h3 class="text-center mb-4">Управление пользователями</h3>
+<h4 class="mb-3">Список пользователей</h4>
+<table class="table table-striped table-bordered">
+    <thead class="table-light">
         <tr>
             <th>Имя</th>
-            <th>Email</th>
+            <th>Почта</th>
             <th>Пароль</th>
             <th>Описание</th>
             <th>Роль</th>
+            <th>Действия</th>
         </tr>
     </thead>
     <tbody>
@@ -24,29 +25,40 @@
                 <td>@user.Name</td>
                 <td>@user.Email</td>
                 <td>@user.Password</td>
-                <td>@user.Discription</td>
+                <td>@user.Description</td>
                 <td>@user.Role</td>
                 <td>
-                    <button @onclick="() => EditUser(user)" class="btn btn-warning">Редактировать</button>
-                    <button @onclick="() => DeleteUser(user.id_User)" class="btn btn-danger">Удалить</button>
+                    <button @onclick="() => EditUser(user)" class="btn btn-warning btn-sm">Редактировать</button>
+                    <button @onclick="() => DeleteUser(user.id_User)" class="btn btn-danger btn-sm">Удалить</button>
                 </td>
             </tr>
         }
     </tbody>
 </table>
 
-<h4>@(isEditing ? "Редактировать пользователя" : "Добавить нового пользователя")</h4>
+<h4 class="mt-4">@((isEditing ? "Редактировать пользователя" : "Добавить нового пользователя"))</h4>
 <EditForm Model="newUser" OnValidSubmit="isEditing ? HandleUpdateUser : HandleCreateUser">
     <DataAnnotationsValidator />
     <ValidationSummary />
-    <InputText @bind-Value="newUser.Name" placeholder="Имя" class="form-control" />
-    <InputText @bind-Value="newUser.Email" placeholder="Email" class="form-control" />
-    <InputText @bind-Value="newUser.Discription" placeholder="Описание" class="form-control" />
-    <InputText @bind-Value="newUser.Password" type="password" placeholder="Пароль" class="form-control" />
+    <div class="mb-3">
+        <InputText @bind-Value="newUser.Name" placeholder="Имя" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <InputText @bind-Value="newUser.Email" placeholder="Email" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <InputText @bind-Value="newUser.Password" type="password" placeholder="Пароль" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <InputText @bind-Value="newUser.Description" placeholder="Описание" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <InputText @bind-Value="newUser.Role" placeholder="Роль" class="form-control" />
+    </div>
     <button type="submit" class="btn btn-primary">@((isEditing) ? "Сохранить" : "Добавить пользователя")</button>
     @if (isEditing)
     {
-        <button type="button" class="btn btn-secondary" @onclick="ResetForm">Отмена</button>
+        <button type="button" class="btn btn-secondary ms-2" @onclick="ResetForm">Отмена</button>
     }
 </EditForm>
 
@@ -105,7 +117,7 @@
     {
         try
         {
-            var response = await Http.PostAsJsonAsync("api/User", newUser);
+            var response = await Http.PostAsJsonAsync("https://localhost:7294/api/User", newUser);
             if (response.IsSuccessStatusCode)
             {
                 await LoadUsers();
@@ -131,9 +143,17 @@
 
     private async Task DeleteUser(int id)
     {
+        string userIdString = await JS.InvokeAsync<string>("localStorage.getItem", "currentUserId");
+        if (id == Convert.ToInt32(userIdString))
+        {
+            ShowAlert("Вы не можете удалить свой собственный аккаунт.");
+            return;
+        }
+
         try
         {
-            var response = await Http.DeleteAsync($"api/User/{id}");
+            var response = await Http.DeleteAsync($"https://localhost:7294/api/User/{id}");
+
             if (response.IsSuccessStatusCode)
             {
                 await LoadUsers();
@@ -146,6 +166,7 @@
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"Ошибка при удалении пользователя: {ex.Message}");
             ShowAlert($"Ошибка: {ex.Message}");
         }
     }

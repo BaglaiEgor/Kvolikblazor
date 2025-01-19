@@ -7,14 +7,14 @@
 <PageTitle>Профиль пользователя</PageTitle>
 
 <div class="container mt-5">
-    <h3>Привет, @users?.Name!</h3>
-    @if (users != null)
+    <h3>Привет, @currentUser?.Name!</h3>
+    @if (currentUser != null)
     {
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Личная информация</h5>
-                <p><strong>Email:</strong> @users.Email</p>
-                <p><strong>Описание:</strong> @users.Discription</p>
+                <p><strong>Email:</strong> @currentUser.Email</p>
+                <p><strong>Описание:</strong> @currentUser.Description</p>
             </div>
         </div>
     }
@@ -22,52 +22,32 @@
     {
         <p>Загрузка информации о пользователе...</p>
     }
+    else
+    {
+        <p>Пользователь не найден.</p>
+    }
 </div>
 
 @code {
-    private Users users;
+    private Users currentUser;
     private bool isLoading = true;
+    private int current;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnInitializedAsync()
     {
-        if (firstRender)
-        {
-            Console.WriteLine("Попытка получения currentUserId из localStorage...");
-            string userIdString = await JS.InvokeAsync<string>("localStorage.getItem", "currentUserId");
-            Console.WriteLine($"Полученное значение: {userIdString}");
-
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                NavigationManager.NavigateTo("/");
-                return;
-            }
-
-            if (int.TryParse(userIdString, out int id))
-            {
-                users = await GetUserById(id);
-                if (users == null)
-                {
-                    NavigationManager.NavigateTo("/");
-                }
-            }
-            else
-            {
-                NavigationManager.NavigateTo("/");
-            }
-
-            isLoading = false;
-            StateHasChanged();
-        }
+        await GetUserById();
     }
 
-    private async Task<Users> GetUserById(int id)
+    private async Task GetUserById()
     {
         try
         {
-            var response = await Http.GetAsync($"api/User/{id}");
+            var userIdString = await JS.InvokeAsync<string>("localStorage.getItem", "currentUserId");
+            int current = Convert.ToInt32(userIdString);
+            var response = await Http.GetAsync($"https://localhost:7294/api/User/{current}");
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync<Users>();
+                currentUser = await response.Content.ReadFromJsonAsync<Users>();
             }
             else
             {
@@ -77,9 +57,13 @@
         }
         catch (Exception ex)
         {
-            ShowAlert($"Ошибка: {ex.Message}");
+            ShowAlert($"Ошибка загрузки пользователя: {ex.Message}");
         }
-        return null;
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 
     private void ShowAlert(string message)

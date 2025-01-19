@@ -48,10 +48,10 @@
                         <InputText @bind-Value="newUser.Email" placeholder="Email" class="form-control" />
                     </div>
                     <div class="mb-3">
-                        <InputText @bind-Value="newUser.Discription" placeholder="Описание" class="form-control" />
+                        <InputText @bind-Value="newUser.Password" type="password" placeholder="Пароль" class="form-control" />
                     </div>
                     <div class="mb-3">
-                        <InputText @bind-Value="newUser.Password" type="password" placeholder="Пароль" class="form-control" />
+                        <InputText @bind-Value="newUser.Description" placeholder="Описание" class="form-control" />
                     </div>
                     <div class="form-check mb-3">
                         <InputCheckbox @bind-Value="isAdmin" class="form-check-input" />
@@ -130,7 +130,6 @@
                 {
                     int userId = user.id_User;
                     await JS.InvokeVoidAsync("localStorage.setItem", "currentUserId", userId);
-
                     string userRole = user.Role;
 
                     ShowAlert("Авторизация успешна!");
