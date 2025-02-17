@@ -1,0 +1,175 @@
+﻿@page "/movies"
+@using kvolikblazor.Model
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+<style>
+    body {
+        background-color: #f5f5f5;
+        font-family: 'Arial', sans-serif;
+        margin: 0;
+        padding: 20px;
+    }
+
+    h3 {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+
+    .btn-primary {
+        background-color: #3498db;
+        border: none;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+
+    .card {
+        border: 1px solid #e1e1e1;
+        margin: 10px;
+        border-radius: 8px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        max-width: 150px;
+        flex: 1 1 150px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .card-body {
+        text-align: center;
+        padding: 15px;
+    }
+
+    .card-title {
+        font-weight: bold;
+        font-size: 16px;
+        color: #34495e;
+        margin-bottom: 8px; 
+    }
+
+    .card-deck {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        max-width: 100%; 
+        gap: 10px; 
+    }
+
+    .search-container {
+        margin-bottom: 15px;
+        text-align: center;
+    }
+
+    .search-input {
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        width: 70%;
+        max-width: 300px;
+        margin-right: 5px;
+    }
+</style>
+
+<h3>Каталог фильмов</h3>
+
+<div class="search-container">
+    <label for="movieSearch" class="form-label">Введите название фильма для поиска:</label>
+    <InputText id="movieSearch" @bind-Value="searchTerm" @oninput="SearchMovieByTitle" class="form-control" />
+</div>
+
+@if (movies == null)
+{
+    <p><em>Загрузка...</em></p>
+}
+else
+{
+    <div class="card-deck">
+        @foreach (var movie in movies)
+        {
+            <div class="card" style="width: 18rem;">
+                <img src="@movie.ImageUrl" class="card-img-top" alt="@movie.Title" />
+                <div class="card-body">
+                    <h5 class="card-title">@movie.Title</h5>
+                    <p class="card-text">Жанр: @movie.Genre</p>
+                    <p class="card-text">Рейтинг: @movie.Rating / 10</p>
+                    <NavLink href="@($"/movies/{movie.id_Movie}")" class="btn btn-primary">Подробнее</NavLink>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<Movies> movies = new List<Movies>();
+    private string searchTerm = string.Empty;
+    private Movies newMovie = new Movies();
+    private string searchTitle;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMovies();
+    }
+
+    private async Task LoadMovies()
+    {
+        try
+        {
+            var response = await Http.GetAsync("https://localhost:7294/api/Movie");
+            if (response.IsSuccessStatusCode)
+            {
+                movies = await response.Content.ReadFromJsonAsync<List<Movies>>();
+            }
+        }
+        catch (Exception ex)
+        {
+            movies = new List<Movies>();
+        }
+    }
+
+    private async Task SearchMovieByTitle(ChangeEventArgs e)
+    {
+        searchTitle = e.Value.ToString();
+
+        if (string.IsNullOrWhiteSpace(searchTitle))
+        {
+            await LoadMovies();
+            return;
+        }
+
+        try
+        {
+            var response = await Http.GetAsync($"https://localhost:7294/api/Movie/SearchByTitle?title={Uri.EscapeDataString(searchTitle)}");
+            if (response.IsSuccessStatusCode)
+            {
+                movies = await response.Content.ReadFromJsonAsync<List<Movies>>();
+            }
+            else
+            {
+                movies = new List<Movies>();
+            }
+        }
+        catch (Exception ex)
+        {
+            movies = new List<Movies>();
+        }
+    }
+
+    private void ResetForm()
+    {
+        newMovie = new Movies();
+    }
+}

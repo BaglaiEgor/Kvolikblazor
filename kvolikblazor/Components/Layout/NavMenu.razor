@@ -1,4 +1,9 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@using kvolikblazor.Model
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@inject HttpClient Http
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">kvolikblazor</a>
     </div>
@@ -25,6 +30,68 @@
                 <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
             </NavLink>
         </div>
+
+        @if (userRole == "Администратор")
+        {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/adminEdit">
+                        <span class="bi bi-pencil-fill" aria-hidden="true"></span> Редактировать
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/adminmovies">
+                        <span class="bi bi-gear-fill" aria-hidden="true"></span> Другие настройки
+                    </NavLink>
+                </div>
+        }
+        else if (userRole == "Пользователь")
+        {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/userProfile">
+                        <span class="bi bi-person-fill" aria-hidden="true"></span> Профиль пользователя
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="/movies">
+                        <span class="bi bi-person-fill" aria-hidden="true"></span> Фильмы
+                    </NavLink>
+                </div>
+        }
+        else
+        {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/login">
+                        <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span> Войти
+                    </NavLink>
+                </div>
+        }
     </nav>
 </div>
 
+@code {
+    private string userRole;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetUserRoleAsync();
+    }
+
+    private async Task GetUserRoleAsync()
+    {
+        try
+        {
+            var userIdString = await JS.InvokeAsync<string>("localStorage.getItem", "currentUserId");
+            int currentUserId = Convert.ToInt32(userIdString);
+            var response = await Http.GetAsync($"https://localhost:7294/api/User/{currentUserId}");
+            if (response.IsSuccessStatusCode)
+            {
+                var user = await response.Content.ReadFromJsonAsync<Users>();
+                userRole = user.Role;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при получении роли пользователя: {ex.Message}");
+        }
+    }
+}

@@ -1,0 +1,72 @@
+﻿@page "/adminnav"
+@inject NavigationManager NavigationManager
+
+<style>
+    body {
+        background-color: #f5f5f5;
+        font-family: 'Arial', sans-serif;
+        margin: 0;
+        padding: 20px;
+    }
+
+    .admin-panel-container {
+        max-width: 800px;
+        margin: auto;
+        padding: 20px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h3 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    .admin-links-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .admin-link {
+        display: block;
+        text-align: center;
+        padding: 15px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        transition: background-color 0.3s, transform 0.2s;
+        font-size: 18px;
+    }
+
+        .admin-link:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .admin-link:active {
+            transform: translateY(0);
+        }
+
+    {
+        flex-direction: column;
+    }
+
+    .admin-link {
+        font-size: 16px;
+    }
+
+    }
+</style>
+
+<div class="admin-panel-container">
+    <h3>Админ-панель</h3>
+
+    <div class="admin-links-container">
+        <NavLink href="/adminEdit" class="admin-link">Управление пользователями</NavLink>
+        <NavLink href="/adminmovies" class="admin-link">Управление фильмами</NavLink>
+    </div>
+</div>

@@ -7,6 +7,15 @@
 
 <PageTitle>Counter</PageTitle>
 
+<style>
+    body {
+        background-color: #f5f5f5;
+        font-family: 'Arial', sans-serif;
+        margin: 0;
+        padding: 20px;
+    }
+</style>
+
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
@@ -137,13 +146,13 @@
                     switch (userRole)
                     {
                         case "Администратор":
-                            NavigationManager.NavigateTo("/adminEdit");
+                            NavigationManager.NavigateTo("/adminnav");
                             break;
                         case "Пользователь":
-                            NavigationManager.NavigateTo("/userProfile");
+                            NavigationManager.NavigateTo("/usernav");
                             break;
                         default:
-                            NavigationManager.NavigateTo("/userProfile");
+                            NavigationManager.NavigateTo("/usernav");
                             break;
                     }
 

@@ -1,0 +1,72 @@
+﻿@page "/usernav"
+
+<style>
+    body {
+        background-color: #f5f5f5;
+        font-family: 'Arial', sans-serif;
+        margin: 0;
+        padding: 20px;
+    }
+
+    .welcome-container {
+        max-width: 600px;
+        margin: auto;
+        padding: 30px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+
+    h3 {
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    .welcome-message {
+        color: #555;
+        font-size: 16px;
+        line-height: 1.5;
+        margin-bottom: 30px;
+    }
+
+    .catalog-button {
+        display: inline-block;
+        padding: 15px 25px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 18px;
+        transition: background-color 0.3s, transform 0.2s;
+        margin: 10px 0;
+    }
+
+        .catalog-button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .catalog-button:active {
+            transform: translateY(0);
+        }
+    {
+        padding: 20px;
+    }
+
+    .catalog-button {
+        font-size: 16px;
+    }
+
+    }
+</style>
+
+<div class="welcome-container">
+    <h3>Добро пожаловать</h3>
+    <p class="welcome-message">Мы рады видеть вас на нашей платформе. Здесь вы можете найти много интересного!</p>
+    <NavLink href="/userProfile" class="catalog-button">Перейти в профиль</NavLink>
+    <NavLink href="/movies" class="catalog-button">Перейти в каталог</NavLink>
+</div>
+
+@code {
+}
